@@ -12,19 +12,20 @@ const userRouter = express.Router();
 
 userRouter.post("/signup", upload.single("file"), async (req, res, next) => {
   try {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, mobile } = req.body;
 
     const parseString = JSON.stringify(req.body);
     const parsedData = JSON.parse(parseString);
     if (
-      !firstName ||
-      firstName.length == 0 ||
-      !lastName ||
-      lastName.length == 0 ||
-      !email ||
-      email.length == 0 ||
-      !password ||
-      password.length == 0
+      (!firstName ||
+        firstName.length == 0 ||
+        !lastName ||
+        lastName.length == 0 ||
+        !email ||
+        email.length == 0 ||
+        !password ||
+        password.length == 0,
+      !mobile || mobile.length === 0)
     ) {
       errorResponseBadRequest(res, "Missing one or more parameter");
     }
@@ -34,6 +35,7 @@ userRouter.post("/signup", upload.single("file"), async (req, res, next) => {
       email: parsedData?.email,
       password: parsedData?.password,
       profileImage: req?.file.filename,
+      mobile: parsedData?.mobile,
     });
     return successResponseNoData(res, "User created successfully");
   } catch (error) {
@@ -42,9 +44,22 @@ userRouter.post("/signup", upload.single("file"), async (req, res, next) => {
   }
 });
 
-userRouter.post("/login", (req, res) => {
+userRouter.post("/login", async (req, res) => {
   try {
-  } catch (error) {}
+    const user = await User.findOne({ email: req.body.email });
+    console.log("user", user);
+    if (!user) {
+      return errorResponseNoData(res, "User not found");
+    }
+
+    const isMatch = await user.comparePassword(req.body.password);
+    if (!isMatch) {
+      return errorResponseNoData(res, "Please check email or password");
+    }
+    return successResponseNoData(res, "Success");
+  } catch (error) {
+    return errorResponseNoData(res, error?.message);
+  }
 });
 
 export default userRouter;
