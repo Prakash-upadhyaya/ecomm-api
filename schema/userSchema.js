@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const UserSchema = new mongoose.Schema(
   {
@@ -30,37 +31,30 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
-// UserSchema.pre("save", function (next) {
-//   let user = this;
-//   if (user.isModified("password")) {
-//   }
-// });
+UserSchema.pre("save", async function (next) {
+  let user = this;
+
+  if (!user.isModified("password")) {
+    return next();
+  }
+  try {
+    const hash = await bcrypt.hash(user.password, parseInt(process.env.SALT));
+    user.password = hash;
+    return next();
+  } catch (err) {
+    return next(err);
+  }
+});
+
+UserSchema.methods.comparePassword = async function (inputPassword) {
+  try {
+    return await bcrypt.compare(inputPassword, this.password);
+  } catch (err) {
+    throw new Error(err);
+  }
+};
+
+// user.comparePassword()     use this method  and pass the password to this method for comparison
 
 const User = mongoose.model("User", UserSchema);
 export default User;
-
-// userSchema.pre("save", function (next) {
-//   var user = this;
-//   if (user.isModified("password")) {
-//     bcrypt.genSalt(SALT_I, (err, salt) => {
-//       if (err) {
-//         return next(err);
-//       }
-//       bcrypt.hash(user.password, salt, (err, hash) => {
-//         if (err) {
-//           return next(err);
-//         }
-//         user.password = hash;
-//         next();
-//       });
-//     });
-//   } else {
-//     next();
-//   }
-// });
-// userSchema.methods.comparePassword = function (candidatePassword, cb) {
-//   bcrypt.compare(candidatePassword, this.password, (err, isMatch) => {
-//     if (err) return cb(err);
-//     cb(null, isMatch);
-//   });
-// };
