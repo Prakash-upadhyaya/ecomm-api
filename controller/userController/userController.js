@@ -10,24 +10,10 @@ const { createUser } = require("../../model/UserModel");
 
 async function signUpController(req, res, next) {
   try {
-    const { firstName, lastName, email, password, mobile } = req.body;
-
     const parseString = JSON.stringify(req.body);
     const parsedData = JSON.parse(parseString);
-    if (
-      (!firstName ||
-        firstName.length == 0 ||
-        !lastName ||
-        lastName.length == 0 ||
-        !email ||
-        email.length == 0 ||
-        !password ||
-        password.length == 0,
-      !mobile || mobile.length === 0)
-    ) {
-      errorResponseBadRequest(res, "Missing one or more parameter");
-    }
-    const user = await createUser({
+
+    await createUser({
       ...parsedData,
       profileImage: req?.file ? req?.file?.filename : "",
     });
