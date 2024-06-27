@@ -6,6 +6,7 @@ const {
   successResponseNoData,
 } = require("../../helpers/apiResponse");
 const User = require("../../schema/userSchema");
+const { createUser } = require("../../model/UserModel");
 
 async function signUpController(req, res, next) {
   try {
@@ -26,17 +27,17 @@ async function signUpController(req, res, next) {
     ) {
       errorResponseBadRequest(res, "Missing one or more parameter");
     }
-    await User.create({
-      firstName: parsedData?.firstName,
-      lastName: parsedData?.lastName,
-      email: parsedData?.email,
-      password: parsedData?.password,
-      profileImage: req?.file.filename,
-      mobile: parsedData?.mobile,
+    const user = await createUser({
+      ...parsedData,
+      profileImage: req?.file ? req?.file?.filename : "",
     });
     return successResponseNoData(res, "User created successfully");
   } catch (error) {
-    fs.unlinkSync(req?.file.path); // remove the file path from local if any error occurs while user creation
+    // Handle file cleanup if req.file exists
+    if (req.file && req.file.path) {
+      // remove the file path from local if any error occurs while user creation
+      fs.unlinkSync(req.file.path);
+    }
     return errorResponseNoData(res, error?.message);
   }
 }
